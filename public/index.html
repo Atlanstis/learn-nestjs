@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>5 种 HTTP 数据传输方式</title>
+	</head>
+	<body>
+    <h1>url param</h1>
+    <button onclick="urlParamClick()">请求</button>
+    <div id="res1"></div>
+    <h1>query</h1>
+    <button onclick="queryClick()">请求</button>
+    <div id="res2"></div>
+    <h1>form urlencoded</h1>
+    <button onclick="formUrlencodedClick()">请求</button>
+    <div id="res3"></div>
+    <h1>form data</h1>
+    <input id="fileInput" type="file" multiple/>
+    <button onclick="formDataClick()">请求</button>
+    <div id="res4"></div>
+    <h1>json</h1>
+    <button onclick="jsonClick()">请求</button>
+    <div id="res5"></div>
+	</body>
+  <script src="https://unpkg.com/axios@0.24.0/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/qs@6.10.2/dist/qs.js"></script>
+  <script>
+    const getDom = (id) => document.getElementById(id);
+    async function urlParamClick () {
+      const res = await axios.get('/person/1');
+      getDom('res1').innerText = JSON.stringify(res.data);
+    }
+
+    async function queryClick() {
+      const res = await axios.get('/person?name=测试&age=20');
+      getDom('res2').innerText = JSON.stringify(res.data);
+    }
+
+    async function formUrlencodedClick() {
+      const res = await axios.post('/person/add',Qs.stringify({
+        name: '测试',
+        age: 20
+      }), {
+        headers: { 'content-type': 'application/x-www-form-urlencoded' }
+      });
+      getDom('res3').innerText = JSON.stringify(res.data);
+    }
+
+    const fileInput = document.querySelector('#fileInput');
+    async function formDataClick() {
+      const data = new FormData();
+      data.set('name','文件上传');
+      data.set('age', 20);
+      data.set('file1', fileInput.files[0]);
+      data.set('file2', fileInput.files[1]);
+
+      const res = await axios.post('/person/upload', data, {
+        headers: { 'content-type': 'multipart/form-data' }
+      });
+      getDom('res4').innerText = JSON.stringify(res.data); 
+    }
+
+    async function jsonClick() {
+      const res = await axios.post('/person/json', {
+        name: 'JSON 测试',
+        age: 20
+      });
+      getDom('res5').innerText = JSON.stringify(res.data);
+    }
+  </script>
+</html>
