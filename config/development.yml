@@ -1,0 +1,3 @@
+mysql:
+  url: 'localhost'
+  port: '3306'
