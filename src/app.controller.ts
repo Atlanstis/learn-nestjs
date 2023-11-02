@@ -1,14 +1,17 @@
-import { Controller, Get, Logger } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
+import { Logger } from 'nestjs-pino';
 
 @Controller()
 export class AppController {
-  private logger = new Logger(AppController.name);
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly logger: Logger,
+  ) {}
 
   @Get()
   getHello(): string {
-    this.logger.log('Hello World!');
+    this.logger.log('hello');
     return this.appService.getHello();
   }
 }
