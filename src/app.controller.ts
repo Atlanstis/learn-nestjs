@@ -3,12 +3,14 @@ import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  private logger = new Logger(AppController.name);
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly logger: Logger,
+  ) {}
 
   @Get()
   getHello(): string {
-    this.logger.log('Hello World!');
+    this.logger.log('getHello');
     return this.appService.getHello();
   }
 }

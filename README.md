@@ -1,52 +1,67 @@
 # Logger-日志模块
 
-## 官方日志方案
+## winston
 
-在创建应用时，可以通过配置 `logger` 的方式，进行日志的管理。
+一个高度集成的日志模块。
+
+### 安装
+
+```shell
+npm i winston
+```
+
+与 nest 集成，可通过第三方提供的 `nest-winston` 库，进行实现。
+
+```shell
+npm i nest-winston
+```
+
+### 使用-替换 nest 原有日志模块
+
+在 `main.ts` 中，创建 `winston` 实例，并传入 `nest`  的 `logger` 属性，
 
 ```ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { createLogger } from 'winston';
+import * as winston from 'winston';
+import { WinstonModule, utilities } from 'nest-winston';
 
 async function bootstrap() {
+  const instance = createLogger({
+    transports: [
+      new winston.transports.Console({
+        format: winston.format.combine(
+          winston.format.timestamp(),
+          utilities.format.nestLike(),
+        ),
+      }),
+    ],
+  });
   const app = await NestFactory.create(AppModule, {
-    // logger: false,
-    logger: ['error', 'warn'],
+    logger: WinstonModule.createLogger(instance),
   });
   await app.listen(3000);
 }
 bootstrap();
 ```
 
-`logger` 为 false，关闭日志的打印。
-
-`logger`  为数组时，表示相对应等级的日志将会被打印，日志等级分为：'error', 'warn', 'debug', 'log', 'verbose', 'fatal' 6种。
-
-### 使用
-
-在 `main.ts` 中使用，
+ 在 `app.module.ts` 中传入，此时 Logger 模块采用 `@nestjs/common` 提供的模块：
 
 ```ts
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { Logger } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
-async function bootstrap() {
-  const logger = new Logger();
-  const app = await NestFactory.create(AppModule, {
-    // logger: false,
-    logger: ['error', 'warn', 'log'],
-  });
-  const port = 3000;
-  await app.listen(port);
-  logger.log(`Server running on port: ${port}`);
-}
-bootstrap();
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [AppService, Logger],
+})
+export class AppModule {}
 ```
 
-通过初始化 `Logger` 实例，调用相对应等级的方法即可。
-
-在 `app.controller.ts` 中使用：
+在 `app.controller.ts`中，使用即可。
 
 ```ts
 import { Controller, Get, Logger } from '@nestjs/common';
@@ -54,25 +69,70 @@ import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  private logger = new Logger(AppController.name);
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly logger: Logger,
+  ) {}
 
   @Get()
   getHello(): string {
-    this.logger.log('Hello World!');
+    this.logger.log('getHello');
     return this.appService.getHello();
   }
 }
 ```
 
-在 `AppController` 中，初始化 logger 属性，调用即可。
+### 日志滚动
 
-初始化 Logger 实例，支持传递一个参数，在日志打印时，会将响应的信息打印出来，例如：
+通过 `winston-daily-rotate-file` 可以将日志以文件的方式进行保存。
 
+```shell
+npm i winston-daily-rotate-file
 ```
-[Nest] 49555  - 2023/11/02 11:01:02     LOG [AppController] Hello World!
+
+然后在 `winston` 实例中增加配置即可。
+
+```ts
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { createLogger } from 'winston';
+import * as winston from 'winston';
+import { WinstonModule, utilities } from 'nest-winston';
+import 'winston-daily-rotate-file';
+
+async function bootstrap() {
+  const instance = createLogger({
+    transports: [
+      new winston.transports.Console({
+        format: winston.format.combine(
+          winston.format.timestamp(),
+          utilities.format.nestLike(),
+        ),
+      }),
+      new winston.transports.DailyRotateFile({
+        filename: 'application-%DATE%.log',
+        dirname: 'logs',
+        datePattern: 'YYYY-MM-DD-HH',
+        zippedArchive: true,
+        maxSize: '20m',
+        maxFiles: '14d',
+      }),
+    ],
+  });
+  const app = await NestFactory.create(AppModule, {
+    logger: WinstonModule.createLogger(instance),
+  });
+  await app.listen(3000);
+}
+bootstrap();
 ```
+
+
 
 ### 参考说明
 
-[Logger | NestJS - A progressive Node.js framework](https://docs.nestjs.com/techniques/logger#logger)
+[winston](https://www.npmjs.com/package/winston)
+
+[nest-winston](https://www.npmjs.com/package/nest-winston)
+
+[winston-daily-rotate-file](https://www.npmjs.com/package/winston-daily-rotate-file)
