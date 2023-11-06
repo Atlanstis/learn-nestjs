@@ -1,32 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { createLogger } from 'winston';
-import * as winston from 'winston';
-import { WinstonModule, utilities } from 'nest-winston';
-import 'winston-daily-rotate-file';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 async function bootstrap() {
-  const instance = createLogger({
-    transports: [
-      new winston.transports.Console({
-        format: winston.format.combine(
-          winston.format.timestamp(),
-          utilities.format.nestLike(),
-        ),
-      }),
-      new winston.transports.DailyRotateFile({
-        filename: 'application-%DATE%.log',
-        dirname: 'logs',
-        datePattern: 'YYYY-MM-DD-HH',
-        zippedArchive: true,
-        maxSize: '20m',
-        maxFiles: '14d',
-      }),
-    ],
-  });
-  const app = await NestFactory.create(AppModule, {
-    logger: WinstonModule.createLogger(instance),
-  });
+  const app = await NestFactory.create(AppModule, {});
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
   await app.listen(3000);
 }
 bootstrap();
